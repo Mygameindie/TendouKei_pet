@@ -755,7 +755,16 @@
               const t = mkRead(CW, CH);
               t.x.drawImage(stiff, 0, 0);
               t.x.globalCompositeOperation = 'destination-in';
-              shape(t.x, part.region);
+              if (part.cap) {
+                // `cap`: the garment's shoulder, which the arm carries as well as
+                // the body keeping its own copy, so the arm's bare shoulder end
+                // is always under the shirt when the arm turns.
+                const m = mkRead(CW, CH);
+                m.x.fillStyle = '#000';
+                shape(m.x, part.region);
+                shape(m.x, part.cap);
+                t.x.drawImage(m.c, 0, 0);
+              } else shape(t.x, part.region);
               w.x.globalCompositeOperation = 'source-over';
               w.x.drawImage(t.c, 0, 0);
             }
