@@ -64,8 +64,9 @@ const state = {
   pet: { x: 0, y: 0, vx: 0, vy: 0, w: 220, h: 250, visible: true, dragging: false, landedAt: 0, impact: 0 },
   gravity: true,
   // Ragdoll: the pet's body is simulated (limp when grabbed or thrown, stands
-  // itself back up). Off = the old rigid sprite.
-  ragdoll: true,
+  // itself back up). Off = the old rigid sprite: the original art in one piece,
+  // no cut joints and no sliced clothing.
+  ragdoll: false,
   // Filled in by the renderer once the outfit system has built its defaults.
   // outfitRev is bumped on every change so a renderer can tell "the wardrobe
   // changed" from "this is just another physics frame" without diffing.
