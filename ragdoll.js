@@ -695,7 +695,21 @@
           art.x.drawImage(bodyImg, 0, 0, CW, CH);
           art.x.restore();
         };
-        if (part.carry && part.carryBelow && bodyImg) putCarry();
+        if (part.carry && part.carryBelow && bodyImg) {
+          putCarry();
+          // The carried piece (the base of the neck and the top of the
+          // shoulders) lies under whatever garment covers it, instead of
+          // showing through on the head's layer.
+          const c0 = part.carry, cx0 = Math.round(c0.x0 * cs), cy0 = Math.round(c0.y0 * cs);
+          art.x.save();
+          art.x.beginPath();
+          art.x.rect(cx0, cy0, Math.round(c0.x1 * cs) - cx0, Math.round(c0.y1 * cs) - cy0);
+          art.x.clip();
+          art.x.globalCompositeOperation = 'destination-out';
+          if (cloth) art.x.drawImage(cloth, 0, 0, CW, CH);
+          if (stiff) art.x.drawImage(stiff, 0, 0, CW, CH);
+          art.x.restore();
+        }
         art.x.drawImage(img, 0, 0, CW, CH);
         if (part.unline) unline(art.x, part.unline);
         if (part.rest) {
