@@ -664,52 +664,8 @@
       };
 
       const regionParts = CFG.parts.filter(p => p.region && imgs[p.file]);
-      // Which part a piece of clothing belongs to follows the drawn pictures, not
-      // a straight line: whatever lies over the body picture stays on the body;
-      // an arm takes what lies over its own picture (the end tucked under the
-      // shoulder included) and the head only what is above the shoulders.
-      const grown = (img, g) => {
-        const m = mkRead(CW, CH);
-        for (const [dx, dy] of [[0, 0], [g, 0], [-g, 0], [0, g], [0, -g], [g, g], [-g, g], [g, -g], [-g, -g]]) m.x.drawImage(img, dx, dy, CW, CH);
-        return crisp(m);
-      };
-      // Hard edges (all or nothing), so the pieces cut along one line meet
-      // exactly instead of both fading out and leaving a see-through seam.
-      const crisp = (m) => {
-        const im = m.x.getImageData(0, 0, CW, CH), d = im.data;
-        for (let i = 3; i < d.length; i += 4) d[i] = d[i] > 40 ? 255 : 0;
-        m.x.putImageData(im, 0, 0);
-        return m.c;
-      };
-      const bodyMask = imgs.body ? grown(imgs.body, Math.max(1, Math.round(1.5 * cs))) : null;
-      const armMasks = {};
-      for (const id of ['arm_L', 'arm_R']) if (imgs[id]) armMasks[id] = grown(imgs[id], Math.max(1, Math.round(5 * cs)));
-      const regionCache = {};
-      const regionCanvas = (part) => {
-        if (regionCache[part.id]) return regionCache[part.id];
-        const m = mkRead(CW, CH);
-        m.x.fillStyle = '#000';
-        shape(m.x, part.region);
-        const arm = armMasks[part.id];
-        if (arm) m.x.drawImage(arm, 0, 0);
-        m.x.globalCompositeOperation = 'destination-out';
-        if (bodyMask && (arm || part.id === 'head')) m.x.drawImage(bodyMask, 0, 0);
-        if (part.id === 'head') for (const id in armMasks) m.x.drawImage(armMasks[id], 0, 0);
-        return (regionCache[part.id] = crisp(m));
-      };
-      // `trim`: the same region pulled in by one pixel, used when cutting the body's
-      // share, so the body keeps a hairline of overlap along every cut and no seam shows.
-      const trimCache = {};
-      const trimmed = (part) => {
-        if (trimCache[part.id]) return trimCache[part.id];
-        const src = regionCanvas(part), g = Math.max(1, Math.round(cs));
-        const m = mkRead(CW, CH);
-        m.x.drawImage(src, 0, 0);
-        m.x.globalCompositeOperation = 'destination-in';
-        for (const [dx, dy] of [[g, 0], [-g, 0], [0, g], [0, -g]]) m.x.drawImage(src, dx, dy);
-        return (trimCache[part.id] = m.c);
-      };
-      const paintRegion = (ctx, part, trim) => ctx.drawImage(trim && armMasks[part.id] ? trimmed(part) : regionCanvas(part), 0, 0);
+      // Which part a piece of clothing belongs to: the part's region (see ragdoll_config.js).
+      const paintRegion = (ctx, part) => shape(ctx, part.region);
       // The blowing part of a skirt: its pixels below the waistband line.
       let blowMask = null, blowY = 0;
       if (blow && cloth) {
