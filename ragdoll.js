@@ -664,6 +664,52 @@
       };
 
       const regionParts = CFG.parts.filter(p => p.region && imgs[p.file]);
+      // Which part a piece of clothing belongs to follows the drawn pictures, not
+      // a straight line: whatever lies over the body picture stays on the body;
+      // an arm takes what lies over its own picture (the end tucked under the
+      // shoulder included) and the head only what is above the shoulders.
+      const grown = (img, g) => {
+        const m = mkRead(CW, CH);
+        for (const [dx, dy] of [[0, 0], [g, 0], [-g, 0], [0, g], [0, -g], [g, g], [-g, g], [g, -g], [-g, -g]]) m.x.drawImage(img, dx, dy, CW, CH);
+        return crisp(m);
+      };
+      // Hard edges (all or nothing), so the pieces cut along one line meet
+      // exactly instead of both fading out and leaving a see-through seam.
+      const crisp = (m) => {
+        const im = m.x.getImageData(0, 0, CW, CH), d = im.data;
+        for (let i = 3; i < d.length; i += 4) d[i] = d[i] > 40 ? 255 : 0;
+        m.x.putImageData(im, 0, 0);
+        return m.c;
+      };
+      const bodyMask = imgs.body ? grown(imgs.body, Math.max(1, Math.round(1.5 * cs))) : null;
+      const armMasks = {};
+      for (const id of ['arm_L', 'arm_R']) if (imgs[id]) armMasks[id] = grown(imgs[id], Math.max(1, Math.round(5 * cs)));
+      const regionCache = {};
+      const regionCanvas = (part) => {
+        if (regionCache[part.id]) return regionCache[part.id];
+        const m = mkRead(CW, CH);
+        m.x.fillStyle = '#000';
+        shape(m.x, part.region);
+        const arm = armMasks[part.id];
+        if (arm) m.x.drawImage(arm, 0, 0);
+        m.x.globalCompositeOperation = 'destination-out';
+        if (bodyMask && (arm || part.id === 'head')) m.x.drawImage(bodyMask, 0, 0);
+        if (part.id === 'head') for (const id in armMasks) m.x.drawImage(armMasks[id], 0, 0);
+        return (regionCache[part.id] = crisp(m));
+      };
+      // `trim`: the same region pulled in by one pixel, used when cutting the body's
+      // share, so the body keeps a hairline of overlap along every cut and no seam shows.
+      const trimCache = {};
+      const trimmed = (part) => {
+        if (trimCache[part.id]) return trimCache[part.id];
+        const src = regionCanvas(part), g = Math.max(1, Math.round(cs));
+        const m = mkRead(CW, CH);
+        m.x.drawImage(src, 0, 0);
+        m.x.globalCompositeOperation = 'destination-in';
+        for (const [dx, dy] of [[g, 0], [-g, 0], [0, g], [0, -g]]) m.x.drawImage(src, dx, dy);
+        return (trimCache[part.id] = m.c);
+      };
+      const paintRegion = (ctx, part, trim) => ctx.drawImage(trim && armMasks[part.id] ? trimmed(part) : regionCanvas(part), 0, 0);
       // The blowing part of a skirt: its pixels below the waistband line.
       let blowMask = null, blowY = 0;
       if (blow && cloth) {
@@ -718,7 +764,7 @@
           w.x.drawImage(cloth, 0, 0);
           if (part.region) {
             w.x.globalCompositeOperation = 'destination-in';
-            shape(w.x, part.region);
+            paintRegion(w.x, part);
             // The chest wins where its region overlaps another (the arms
             // reach in over the side of the chest), so a bra cup only ever
             // moves with the chest.
@@ -741,14 +787,14 @@
               const t = mkRead(CW, CH);
               t.x.drawImage(stiff, 0, 0);
               t.x.globalCompositeOperation = 'destination-in';
-              shape(t.x, part.region);
+              paintRegion(t.x, part);
               w.x.globalCompositeOperation = 'source-over';
               w.x.drawImage(t.c, 0, 0);
             }
           } else if (part.rest) {
             // The body takes whatever no other part claimed...
             w.x.globalCompositeOperation = 'destination-out';
-            for (const o of regionParts) shape(w.x, o.region);
+            for (const o of regionParts) paintRegion(w.x, o, true);
             // ...plus whatever hangs from the hips over the legs...
             if (hang) {
               const h = mkRead(CW, CH);
@@ -784,18 +830,48 @@
         }
         if (!box) continue;
 
+        const pv = CFG.particles[part.pivot];
+        const ch = CFG.particles[part.child] || CFG.soft[part.child];
+        if (part.id === 'head') {
+          // The head picture goes under the body and its clothes, so the neck
+          // sits inside the collar; what is worn on the head (hat, glasses,
+          // ears) is its own piece on top of everything.
+          const ab = bboxOf(art.x);
+          if (ab) {
+            const ac = mk(ab.x1 - ab.x0, ab.y1 - ab.y0);
+            ac.getContext('2d').drawImage(art.c, -ab.x0, -ab.y0);
+            out.push({
+              id: part.id, pivot: part.pivot, child: part.child, canvas: ac,
+              ox: pv.x * cs - ab.x0, oy: pv.y * cs - ab.y0,
+              restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
+            });
+          }
+          const wb2 = worn && bboxOf(worn.getContext('2d', { willReadFrequently: true }));
+          if (wb2) {
+            const wc = mk(wb2.x1 - wb2.x0, wb2.y1 - wb2.y0);
+            wc.getContext('2d').drawImage(worn, -wb2.x0, -wb2.y0);
+            out.push({
+              id: 'head_worn', pivot: part.pivot, child: part.child, canvas: wc,
+              ox: pv.x * cs - wb2.x0, oy: pv.y * cs - wb2.y0,
+              restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
+            });
+          }
+          continue;
+        }
         const c = mk(box.x1 - box.x0, box.y1 - box.y0);
         const cx = c.getContext('2d');
         cx.drawImage(art.c, -box.x0, -box.y0);
         if (worn) cx.drawImage(worn, -box.x0, -box.y0);
 
-        const pv = CFG.particles[part.pivot];
-        const ch = CFG.particles[part.child] || CFG.soft[part.child];
         out.push({
           id: part.id, pivot: part.pivot, child: part.child, offset: part.offset, canvas: c,
           ox: pv.x * cs - box.x0, oy: pv.y * cs - box.y0,       // pivot inside the part's canvas
           restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
         });
+      }
+      {
+        const hi = out.findIndex(o => o.id === 'head'), bi = out.findIndex(o => o.id === 'body');
+        if (hi > bi && bi >= 0) { const [h] = out.splice(hi, 1); out.splice(bi, 0, h); }
       }
       // The skirt: the part of a blowing garment below its waistband, in one
       // piece. It turns with the body and is drawn right after it, over the
@@ -832,7 +908,7 @@
         const st = mkRead(CW, CH);
         st.x.drawImage(stiff, 0, 0);
         st.x.globalCompositeOperation = 'destination-out';
-        for (const o of regionParts) if (!o.offset) shape(st.x, o.region);
+        for (const o of regionParts) if (!o.offset) paintRegion(st.x, o, true);
         t.x.drawImage(st.c, 0, 0);
         // The _over layers go on top of the stiff garments, so a jacket's
         // front panels cover the top beneath them.
