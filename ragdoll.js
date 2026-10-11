@@ -854,6 +854,19 @@
           restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
         });
       }
+      // A garment over the shoulder has its own outline there, so the bare
+      // shoulder line (drawn over everything) is dropped for that side.
+      this.shoulderCovered = {};
+      const covers = (c, x, y) => {
+        if (!c || !c.width) return false;
+        const px = Math.round(x * cs), py = Math.round(y * cs);
+        if (px < 0 || py < 0 || px >= c.width || py >= c.height) return false;
+        return c.getContext('2d').getImageData(px, py, 1, 1).data[3] > 128;
+      };
+      for (const L of CFG.shoulderLines || []) {
+        const pts = [L.ctrl, L.arm];
+        this.shoulderCovered[L.part] = pts.some(q => covers(cloth, q[0], q[1]) || covers(stiff, q[0], q[1]));
+      }
       this.parts = out;
       this.artScale = cs;
     }
@@ -966,7 +979,7 @@
 
       for (const L of which === 'shoulders' ? CFG.shoulderLines || [] : []) {
         const t = placed[L.part];
-        if (!t) continue;
+        if (!t || (this.shoulderCovered && this.shoulderCovered[L.part])) continue;
         const P = CFG.particles[t.pivot];
         const onArm = q => {
           const dx = (q[0] - P.x) * k, dy = (q[1] - P.y) * k;
