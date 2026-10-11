@@ -96,41 +96,15 @@
     { id: 'back_tail',  file: 'back_tail',  optional: true, pivot: 'P', child: 'Tt' },
     { id: 'leg_L', file: 'leg_L', drop: true, unline: { x0: 340, y0: 790, x1: 425, y1: 846 }, carry: { t: 'rect', x0: 340, y0: 869, x1: 425, y1: 900 }, pivot: 'HipL', child: 'FL', region: { t: 'rect', x0: 0,   y0: 868, x1: 425, y1: SRC_H } },
     { id: 'leg_R', file: 'leg_R', drop: true, unline: { x0: 425, y0: 790, x1: 510, y1: 846 }, carry: { t: 'rect', x0: 425, y0: 869, x1: 510, y1: 900 }, pivot: 'HipR', child: 'FR', region: { t: 'rect', x0: 425, y0: 868, x1: SRC_W, y1: SRC_H } },
-    { id: 'arm_L', file: 'arm_L', lift: 1, unline: { x0: 352, y0: 590, x1: 410, y1: 690 }, carry: { t: 'rect', x0: 340, y0: 590, x1: 367, y1: 662 }, pivot: 'SL', child: 'HL', region: { t: 'rect', x0: 0,   y0: 606, x1: 346,   y1: 846 } },
-    { id: 'arm_R', file: 'arm_R', lift: -1, unline: { x0: 440, y0: 590, x1: 498, y1: 690 }, carry: { t: 'rect', x0: 483, y0: 590, x1: 510, y1: 662 }, pivot: 'SR', child: 'HR', region: { t: 'rect', x0: 505, y0: 606, x1: SRC_W, y1: 846 } },
+    { id: 'arm_L', file: 'arm_L', unline: { x0: 352, y0: 590, x1: 410, y1: 690 }, carry: { t: 'rect', x0: 340, y0: 590, x1: 367, y1: 662 }, pivot: 'SL', child: 'HL', region: { t: 'rect', x0: 0,   y0: 606, x1: 346,   y1: 846 } },
+    { id: 'arm_R', file: 'arm_R', unline: { x0: 440, y0: 590, x1: 498, y1: 690 }, carry: { t: 'rect', x0: 483, y0: 590, x1: 510, y1: 662 }, pivot: 'SR', child: 'HR', region: { t: 'rect', x0: 505, y0: 606, x1: SRC_W, y1: 846 } },
     { id: 'body',  file: 'body',  pivot: 'N', child: 'P', rest: true },
     { id: 'chest_L', file: 'chest_L', optional: true, pivot: 'N', child: 'P', offset: 'CL', region: { t: 'ellipse', cx: 381, cy: 676, rx: 54, ry: 56 } },
     { id: 'chest_R', file: 'chest_R', optional: true, pivot: 'N', child: 'P', offset: 'CR', region: { t: 'ellipse', cx: 469, cy: 676, rx: 54, ry: 56 } },
     { id: 'head',  file: 'head',  carry: { t: 'rect', x0: 370, y0: 594, x1: 480, y1: 614 }, carryBelow: true, pivot: 'N', child: 'Hd', region: { t: 'rect', x0: 0, y0: 0, x1: SRC_W, y1: 606 } },
   ];
 
-  // The shoulder line: from the base of the neck (on the body) over the top of the
-  // shoulder to the top edge of the arm. In the art that line is half body, half
-  // arm, so once the arm turns the two halves part; this draws it again every
-  // frame, bending to wherever the arm is. `ctrl` shapes the curve at rest (it
-  // moves half with the body, half with the arm). Source px.
-  // The armpit line: when an arm is raised, a gap opens between the underside of
-  // the arm and the side of the body. This fills it with skin and draws the
-  // outline from the body's side line (`side`) round to the arm's underside
-  // (`arm`). `inner` is a point inside the body that closes the filled area.
-  // Fades in over the first few degrees of raise; hidden when the arm is down.
-  const armpitLines = [
-    { part: 'arm_L', sign: 1,  side: [373, 664], ctrl: [369, 654], arm: [353, 668], inner: [392, 640], w: 7.5 },
-    { part: 'arm_R', sign: -1, side: [477, 664], ctrl: [481, 654], arm: [497, 668], inner: [458, 640], w: 7.5 },
-  ];
-
-  const shoulderLines = [
-    { part: 'arm_L', neck: [380, 605], ctrl: [352, 606], arm: [326, 627], w: 6.5 },
-    { part: 'arm_R', neck: [470, 605], ctrl: [498, 606], arm: [524, 627], w: 6.5 },
-  ];
-
-  // A raised arm lifts its shoulder: the whole arm (with the shoulder lump it
-  // carries) is drawn up and a little toward the neck, by up to `up` / `in` source
-  // px, starting once the arm is 10 degrees above standing. Only drawn that way,
-  // so it costs nothing in the physics.
-  const shoulderLift = { up: 16, in: 5, from: 10, full: 90 };
-
-  const config = { shoulderLift, SRC_W, SRC_H, SOLE_Y, particles, soft, rigid, limits, shoulderLines, armpitLines, parts };
+  const config = { SRC_W, SRC_H, SOLE_Y, particles, soft, rigid, limits, parts };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = config;
   root.RAGDOLL_CONFIG = config;

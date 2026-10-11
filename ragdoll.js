@@ -868,19 +868,6 @@
           restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
         });
       }
-      // A garment over the shoulder has its own outline there, so the bare
-      // shoulder line (drawn over everything) is dropped for that side.
-      this.shoulderCovered = {};
-      const covers = (c, x, y) => {
-        if (!c || !c.width) return false;
-        const px = Math.round(x * cs), py = Math.round(y * cs);
-        if (px < 0 || py < 0 || px >= c.width || py >= c.height) return false;
-        return c.getContext('2d').getImageData(px, py, 1, 1).data[3] > 128;
-      };
-      for (const L of CFG.shoulderLines || []) {
-        const pts = [L.ctrl, L.arm];
-        this.shoulderCovered[L.part] = pts.some(q => covers(cloth, q[0], q[1]) || covers(stiff, q[0], q[1]));
-      }
       this.parts = out;
       this.artScale = cs;
     }
@@ -891,7 +878,6 @@
       if (!this.parts) return;
       const inv = 1 / dpr;
       const th = this.frameAngle('torso');
-      const placed = {};                   // where each part was drawn, for the shoulder lines
       for (const part of this.parts) {
         const a = this.p[part.pivot], b = this.p[part.child];
         let ax = a.x, ay = a.y, ang;
@@ -908,15 +894,6 @@
             const d = CFG.LEG_DROP * this.k;
             ax += -Math.sin(th) * d; ay += Math.cos(th) * d;
           }
-          if (part.lift) {
-            // Raising the arm lifts the shoulder: up the body, and a little inward.
-            const L = CFG.shoulderLift;
-            const raise = part.lift * wrap(this.ang(part.pivot, part.child) - (this.restAng(part.pivot, part.child) + th)) / DEG;
-            const f = Math.max(0, Math.min(1.2, (raise - L.from) / (L.full - L.from)));
-            const up = f * L.up * this.k, inward = f * L.in * this.k * part.lift;
-            ax += Math.sin(th) * up + Math.cos(th) * inward;
-            ay += -Math.cos(th) * up + Math.sin(th) * inward;
-          }
         }
         ctx.save();
         ctx.translate(ax - originX, ay - originY);
@@ -932,94 +909,6 @@
           ctx.translate(0, -hy);
         }
         ctx.drawImage(part.canvas, -part.ox * inv, -part.oy * inv, part.canvas.width * inv, part.canvas.height * inv);
-        ctx.restore();
-        placed[part.id] = { x: ax, y: ay, ang, pivot: part.pivot };
-        if (part.id === 'body') this.drawShoulders(ctx, originX, originY, th, placed, 'armpits');
-      }
-      // The shoulder lines go on last: the head picture's neck covers the top of
-      // the shoulders, and drawn under it the lines vanished, leaving the arms
-      // looking stuck straight into the chest.
-      this.drawShoulders(ctx, originX, originY, th, placed, 'shoulders');
-    }
-
-    // Redraw each shoulder line from the neck (on the body) to the arm, wherever
-    // the arm has gone. `which` is 'armpits' (drawn over the body, under the
-    // chest) or 'shoulders' (drawn over everything, see draw()).
-    drawShoulders(ctx, originX, originY, th, placed, which) {
-      const N = CFG.particles.N, n = this.p.N, k = this.k;
-      const onBody = q => {
-        const dx = (q[0] - N.x) * k, dy = (q[1] - N.y) * k;
-        return [n.x + dx * Math.cos(th) - dy * Math.sin(th), n.y + dx * Math.sin(th) + dy * Math.cos(th)];
-      };
-      // Armpits first, so the shoulder line is drawn over their top.
-      for (const L of which === 'armpits' ? CFG.armpitLines || [] : []) {
-        const t = placed[L.part];
-        if (!t) continue;
-        const P = CFG.particles[t.pivot];
-        const tip = this.p[CFG.parts.find(p => p.id === L.part).child];
-        const raise = L.sign * wrap(Math.atan2(tip.y - this.p[t.pivot].y, tip.x - this.p[t.pivot].x)
-          - (this.restAng(t.pivot, CFG.parts.find(p => p.id === L.part).child) + th)) / DEG;
-        const alpha = Math.max(0, Math.min(1, (raise - 3) / 9));
-        if (alpha <= 0) continue;
-        const onArm = q => {
-          const dx = (q[0] - P.x) * k, dy = (q[1] - P.y) * k;
-          return [t.x + dx * Math.cos(t.ang) - dy * Math.sin(t.ang), t.y + dx * Math.sin(t.ang) + dy * Math.cos(t.ang)];
-        };
-        const a = onBody(L.side), b = onArm(L.arm), pv = onArm([P.x, P.y]), inn = onBody(L.inner);
-        const c1 = onBody(L.ctrl), c2 = onArm(L.ctrl);
-        const c = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2];
-        const X = q => q[0] - originX, Y = q => q[1] - originY;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        // Skin over the gap...
-        ctx.fillStyle = this.skin || '#fde2cf';
-        ctx.beginPath();
-        ctx.moveTo(X(a), Y(a));
-        ctx.quadraticCurveTo(X(c), Y(c), X(b), Y(b));
-        ctx.lineTo(X(pv), Y(pv));
-        ctx.lineTo(X(inn), Y(inn));
-        ctx.closePath();
-        ctx.fill();
-        // ...and the outline along its edge.
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = L.w * k;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(X(a), Y(a));
-        ctx.quadraticCurveTo(X(c), Y(c), X(b), Y(b));
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      for (const L of which === 'shoulders' ? CFG.shoulderLines || [] : []) {
-        const t = placed[L.part];
-        if (!t || (this.shoulderCovered && this.shoulderCovered[L.part])) continue;
-        const P = CFG.particles[t.pivot];
-        const onArm = q => {
-          const dx = (q[0] - P.x) * k, dy = (q[1] - P.y) * k;
-          return [t.x + dx * Math.cos(t.ang) - dy * Math.sin(t.ang), t.y + dx * Math.sin(t.ang) + dy * Math.cos(t.ang)];
-        };
-        const a = onBody(L.neck), b = onArm(L.arm);
-        // A raised arm lifts its shoulder up to the neck, and the line shrinks
-        // toward a dot; fade it out as it gets that short. Past straight up the
-        // arm's own edge takes over and the line would curl into a hook: gone by 60 degrees up.
-        const len = Math.hypot(b[0] - a[0], b[1] - a[1]) / k;
-        const def = CFG.parts.find(p => p.id === L.part);
-        const raise = (def.lift || 1) * wrap(this.ang(t.pivot, def.child) - (this.restAng(t.pivot, def.child) + th)) / DEG;
-        const alpha = Math.max(0, Math.min(1, (len - 10) / 12, (60 - raise) / 15));
-        if (alpha <= 0) continue;
-        const c1 = onBody(L.ctrl), c2 = onArm(L.ctrl);
-        const c = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2];
-        ctx.save();
-        // Fade by thinning, not by transparency: a half-transparent outline
-        // shows up as a grey smudge on the skin.
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = L.w * k * alpha;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(a[0] - originX, a[1] - originY);
-        ctx.quadraticCurveTo(c[0] - originX, c[1] - originY, b[0] - originX, b[1] - originY);
-        ctx.stroke();
         ctx.restore();
       }
     }
