@@ -829,12 +829,14 @@
       if (stiff) {
         // A stiff garment's share: all of it but what the arms, legs and head took.
         const t = mkRead(CW, CH);
-        if (over) t.x.drawImage(over, 0, 0);
         const st = mkRead(CW, CH);
         st.x.drawImage(stiff, 0, 0);
         st.x.globalCompositeOperation = 'destination-out';
         for (const o of regionParts) if (!o.offset) shape(st.x, o.region);
         t.x.drawImage(st.c, 0, 0);
+        // The _over layers go on top of the stiff garments, so a jacket's
+        // front panels cover the top beneath them.
+        if (over) t.x.drawImage(over, 0, 0);
         overAll = t.c;
       }
       if (overAll && bboxOf(overAll.getContext('2d', { willReadFrequently: true }))) {

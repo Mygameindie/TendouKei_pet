@@ -79,7 +79,7 @@ window.OUTFIT_CONFIG = {
     onepieceUnderwear: ["onepieceunderwear1"],
     top:               [{ id: "top1", stiff: true }],
     bottom:            ["pants1", { id: "skirt1", blows: true }],
-    jacket:            ["jacket1"],
+    jacket:            [{ id: "jacket1", stiff: true }],
     dress:             ["dress1"],
     bodysuit:          ["bodysuit1"],
     socks:             ["socks1"],
