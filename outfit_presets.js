@@ -41,7 +41,7 @@ window.OUTFIT_PRESETS = [
   {
     name: "Swimsuit",
     emoji: "🩱",
-    clothes: { topUnderwear: "topunderwear1", bottomUnderwear: "bottomunderwear1" },
+    clothes: { topUnderwear: "topunderwear2", bottomUnderwear: "bottomunderwear2" },
   },
   {
     name: "Birthday Suit",

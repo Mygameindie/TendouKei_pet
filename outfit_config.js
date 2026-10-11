@@ -74,8 +74,8 @@ window.OUTFIT_CONFIG = {
   // THE WARDROBE — every garment the one pet can wear.
   // -------------------------------------------------------------------------
   pet: {
-    topUnderwear:      [{ id: "topunderwear1", stiff: true }, "topunderwear2", "topunderwear3", "topunderwear4"],
-    bottomUnderwear:   [{ id: "bottomunderwear1", hangs: true }, "bottomunderwear2", "bottomunderwear3", "bottomunderwear4"],
+    topUnderwear:      [{ id: "topunderwear1", stiff: true }, { id: "topunderwear2", stiff: true }, "topunderwear3", "topunderwear4"],
+    bottomUnderwear:   [{ id: "bottomunderwear1", hangs: true }, { id: "bottomunderwear2", hangs: true }, "bottomunderwear3", "bottomunderwear4"],
     onepieceUnderwear: ["onepieceunderwear1"],
     top:               [{ id: "top1", stiff: true }],
     bottom:            ["pants1", { id: "skirt1", blows: true }],
