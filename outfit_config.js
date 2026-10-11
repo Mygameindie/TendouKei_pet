@@ -58,6 +58,7 @@ window.OUTFIT_CONFIG = {
     { key: "onepieceUnderwear", label: "One-Piece Underwear",       z: 65  },
     { key: "top",               label: "Top",                       z: 120 },
     { key: "bottom",            label: "Pants / Skirt",             z: 110 },
+    { key: "jacket",            label: "Jacket",                    z: 125 },
     { key: "dress",             label: "Dress",                     z: 130, blows: 820 },
     { key: "bodysuit",          label: "Bodysuit",                  z: 128 },
     { key: "socks",             label: "Socks",                     z: 85  },
@@ -78,6 +79,7 @@ window.OUTFIT_CONFIG = {
     onepieceUnderwear: ["onepieceunderwear1"],
     top:               [{ id: "top1", stiff: true }],
     bottom:            ["pants1", { id: "skirt1", blows: true }],
+    jacket:            ["jacket1"],
     dress:             ["dress1"],
     bodysuit:          ["bodysuit1"],
     socks:             ["socks1"],
@@ -92,6 +94,7 @@ window.OUTFIT_CONFIG = {
   // What the pet is wearing on a fresh start. Anything left out starts as None.
   defaults: {
     top: "top1",
+    jacket: "jacket1",
     topUnderwear: "topunderwear1",
     bottomUnderwear: "bottomunderwear1",
     bottom: "skirt1",
