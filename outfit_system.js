@@ -162,6 +162,9 @@
         if (it) catalog[c.key].items[it.id] = {
           id: it.id, label: it.label, img: img(`${it.prefix}.png`),
           over: img(`${it.prefix}_over.png`), under: img(`${it.prefix}_under.png`),
+          // <name>_arm_L.png / <name>_arm_R.png: the garment's sleeves, drawn as
+          // their own pictures that turn with each arm (so the garment itself is never cut up).
+          armL: img(`${it.prefix}_arm_L.png`), armR: img(`${it.prefix}_arm_R.png`),
           hangs: it.hangs === undefined ? c.hangs : !!it.hangs,
           // `stiff`: one solid piece (a sports bra) that would tear if cut up
           // along the body: kept whole on the body, over the chest.

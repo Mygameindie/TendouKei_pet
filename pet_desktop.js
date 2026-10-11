@@ -170,6 +170,8 @@
     // Clothes on top, layered by z and tinted, straight from the outfit system.
     if (typeof window.drawOutfitOverlay === 'function') {
       window.drawOutfitOverlay(ctx, 'stand', x, y, w, h);
+      window.drawOutfitOverlay(ctx, 'stand', x, y, w, h, null, 'armL');
+      window.drawOutfitOverlay(ctx, 'stand', x, y, w, h, null, 'armR');
     }
   }
 
@@ -226,7 +228,7 @@
     // the legs: only its shape is needed, the colours come from `cloth`.
     // Plus each garment's optional _over / _under layers (see outfit_system.js).
     const sized = () => { const c = document.createElement('canvas'); c.width = cloth.width; c.height = cloth.height; return c; };
-    const hang = sized(), over = sized(), under = sized(), blow = sized(), stiff = sized();
+    const hang = sized(), over = sized(), under = sized(), blow = sized(), stiff = sized(), armL = sized(), armR = sized();
     let blowFrom = Infinity;
     if (typeof window.drawOutfitOverlay === 'function') {
       window.drawOutfitOverlay(cloth.getContext('2d'), 'stand', 0, 0, cloth.width, cloth.height, it => !it.stiff && !it.blows);
@@ -241,8 +243,11 @@
       // Stiff garments stay whole over the chest (their sleeves still follow the arms).
       window.drawOutfitOverlay(stiff.getContext('2d'), 'stand', 0, 0, cloth.width, cloth.height, it => it.stiff);
       window.drawOutfitOverlay(under.getContext('2d'), 'stand', 0, 0, cloth.width, cloth.height, null, 'under');
+      // Sleeves: one picture per arm, turned with that arm.
+      window.drawOutfitOverlay(armL.getContext('2d'), 'stand', 0, 0, cloth.width, cloth.height, null, 'armL');
+      window.drawOutfitOverlay(armR.getContext('2d'), 'stand', 0, 0, cloth.width, cloth.height, null, 'armR');
     }
-    pet.body.buildArt(pet.partImgs, cloth, cs, hang, over, under, blow, isFinite(blowFrom) ? blowFrom : null, stiff);
+    pet.body.buildArt(pet.partImgs, cloth, cs, hang, over, under, blow, isFinite(blowFrom) ? blowFrom : null, stiff, { arm_L: armL, arm_R: armR });
   }
 
   // Feed the scene's state to the skeleton.

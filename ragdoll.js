@@ -601,7 +601,7 @@
     // stiff (optional): garments kept whole over the chest (a top): over the
     // chest they go on the body's over-the-chest layer, but their sleeves and
     // anything else on the arms, legs or head still go with those parts.
-    buildArt(imgs, cloth, cs, hang, over, under, blow, blowFrom, stiff) {
+    buildArt(imgs, cloth, cs, hang, over, under, blow, blowFrom, stiff, armCloth) {
       const CW = Math.round(CFG.SRC_W * cs), CH = Math.round(CFG.SRC_H * cs);
       const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
       const mkRead = (w, h) => { const c = mk(w, h); return { c, x: c.getContext('2d', { willReadFrequently: true }) }; };
@@ -880,6 +880,27 @@
         for (let i = out.length - 1; i >= 0; i--) if (out[i].offset || out[i].id === 'body') { at = i + 1; break; }
         out.splice(at, 0, {
           id: 'body_over', pivot: 'N', child: 'P', canvas: c,
+          ox: pv.x * cs - b.x0, oy: pv.y * cs - b.y0,
+          restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
+        });
+      }
+      // Sleeves: each arm's clothing is its own picture, drawn above the body and
+      // turned with that arm (nothing is cut out of the garments).
+      for (const id of ['arm_L', 'arm_R']) {
+        const src = armCloth && armCloth[id];
+        const def = CFG.parts.find(p => p.id === id);
+        if (!src || !def) continue;
+        const r = mkRead(CW, CH);
+        r.x.drawImage(src, 0, 0);
+        const b = bboxOf(r.x);
+        if (!b) continue;
+        const c = mk(b.x1 - b.x0, b.y1 - b.y0);
+        c.getContext('2d').drawImage(r.c, -b.x0, -b.y0);
+        const pv = CFG.particles[def.pivot], ch = CFG.particles[def.child];
+        let at = out.findIndex(o => o.id === 'head_worn');
+        if (at < 0) at = out.length;
+        out.splice(at, 0, {
+          id: id + '_cloth', pivot: def.pivot, child: def.child, canvas: c,
           ox: pv.x * cs - b.x0, oy: pv.y * cs - b.y0,
           restAngle: Math.atan2(ch.y - pv.y, ch.x - pv.x),
         });
