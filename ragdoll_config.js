@@ -94,6 +94,9 @@
     { id: 'back_hair',  file: 'back_hair',  optional: true, pivot: 'N', child: 'Hr' },
     { id: 'back_wings', file: 'back_wings', optional: true, pivot: 'N', child: 'P' },
     { id: 'back_tail',  file: 'back_tail',  optional: true, pivot: 'P', child: 'Tt' },
+    // Optional filler for the shoulder / armpit: behind the arms, turns with the body.
+    { id: 'shoulder_L', file: 'shoulder_L', optional: true, pivot: 'N', child: 'P' },
+    { id: 'shoulder_R', file: 'shoulder_R', optional: true, pivot: 'N', child: 'P' },
     { id: 'leg_L', file: 'leg_L', drop: true, pivot: 'HipL', child: 'FL', region: { t: 'rect', x0: 0,   y0: 868, x1: 425, y1: SRC_H } },
     { id: 'leg_R', file: 'leg_R', drop: true, pivot: 'HipR', child: 'FR', region: { t: 'rect', x0: 425, y0: 868, x1: SRC_W, y1: SRC_H } },
     { id: 'arm_L', file: 'arm_L', pivot: 'SL', child: 'HL', region: { t: 'rect', x0: 0,   y0: 606, x1: 346,   y1: 846 } },
