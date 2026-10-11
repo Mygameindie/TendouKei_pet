@@ -695,21 +695,7 @@
           art.x.drawImage(bodyImg, 0, 0, CW, CH);
           art.x.restore();
         };
-        if (part.carry && part.carryBelow && bodyImg) {
-          putCarry();
-          // The carried piece (the base of the neck and the top of the
-          // shoulders) lies under whatever garment covers it, instead of
-          // showing through on the head's layer.
-          const c0 = part.carry, cx0 = Math.round(c0.x0 * cs), cy0 = Math.round(c0.y0 * cs);
-          art.x.save();
-          art.x.beginPath();
-          art.x.rect(cx0, cy0, Math.round(c0.x1 * cs) - cx0, Math.round(c0.y1 * cs) - cy0);
-          art.x.clip();
-          art.x.globalCompositeOperation = 'destination-out';
-          if (cloth) art.x.drawImage(cloth, 0, 0, CW, CH);
-          if (stiff) art.x.drawImage(stiff, 0, 0, CW, CH);
-          art.x.restore();
-        }
+        if (part.carry && part.carryBelow && bodyImg) putCarry();
         art.x.drawImage(img, 0, 0, CW, CH);
         if (part.unline) unline(art.x, part.unline);
         if (part.rest) {
@@ -755,16 +741,7 @@
               const t = mkRead(CW, CH);
               t.x.drawImage(stiff, 0, 0);
               t.x.globalCompositeOperation = 'destination-in';
-              if (part.cap) {
-                // `cap`: the garment's shoulder, which the arm carries as well as
-                // the body keeping its own copy, so the arm's bare shoulder end
-                // is always under the shirt when the arm turns.
-                const m = mkRead(CW, CH);
-                m.x.fillStyle = '#000';
-                shape(m.x, part.region);
-                shape(m.x, part.cap);
-                t.x.drawImage(m.c, 0, 0);
-              } else shape(t.x, part.region);
+              shape(t.x, part.region);
               w.x.globalCompositeOperation = 'source-over';
               w.x.drawImage(t.c, 0, 0);
             }
